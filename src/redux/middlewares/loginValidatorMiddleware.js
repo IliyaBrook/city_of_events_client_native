@@ -1,38 +1,42 @@
 import {
-	CLEAR_LOGIN_VALIDATOR,
+	CLEAR_LOGIN_INPUT_ERROR_EMAIL,
+	CLEAR_LOGIN_INPUT_ERROR_PASSWORM,
 	SET_FORM_CONFIRMED_LOGIN,
-	SET_LOGIN_ERRORS,
-	SET_LOGIN_INPUTS,
+	SET_LOGIN_INPUT_EMAIL,
+	SET_LOGIN_INPUT_ERROR_EMAIL,
+	SET_LOGIN_INPUT_ERROR_PASSWORM,
+	SET_LOGIN_INPUT_INPUT_PASSWORD,
 	SUBMIT_BUTTON_CLICKED_LOGIN
 } from "../forms/validatorLoginForm/validatorLoginTypes"
-import validator from 'validator/es'
+import validator from "validator/es"
+
 
 export const loginValidatorMiddleware = ({dispatch, getState}) => next => action => {
+	const {email, password} = getState().validatorLoginReducer.loginInputs
+	
 	switch (action.type) {
-		case SET_LOGIN_INPUTS:
-			return next(action)
+		case SET_LOGIN_INPUT_EMAIL:
+			validator.isEmail(action.payload) && dispatch({type:CLEAR_LOGIN_INPUT_ERROR_EMAIL})
+			break
+		case SET_LOGIN_INPUT_INPUT_PASSWORD:
+			validator.isLength(action.payload, {min: 1}) && dispatch({type:CLEAR_LOGIN_INPUT_ERROR_PASSWORM})
+			break
 		case SUBMIT_BUTTON_CLICKED_LOGIN:
-			const { email, password } = getState().validatorLoginReducer.loginInputs
-			const isEmail = validator?.isEmail(email)
-			const isPassword = validator?.isLength(password,{min:1})
 			const validate = () => {
-				if (!isEmail) {
-					dispatch({type: SET_LOGIN_ERRORS, payload: {email: 'Please enter a valid email'}})
+				if (!validator.isEmail(email)) {
+					dispatch({type: SET_LOGIN_INPUT_ERROR_EMAIL, payload: 'Please enter email'})
 					return false
-				} else if (!isPassword) {
-					dispatch({type: SET_LOGIN_ERRORS, payload: {password: 'Please enter a password'}})
+				} else if (!validator.isLength(password, {min: 1})) {
+					dispatch({type: SET_LOGIN_INPUT_ERROR_PASSWORM, payload: 'Password password'})
 					return false
 				}
 				return true
 			}
 			if (validate()) {
-				dispatch({type:CLEAR_LOGIN_VALIDATOR})
-				dispatch({type:SET_LOGIN_ERRORS,payload: {}})
-				dispatch({type:SET_FORM_CONFIRMED_LOGIN})
-				console.log('form confrimed')
+				dispatch({
+					type: SET_FORM_CONFIRMED_LOGIN, payload: { email, password }
+				})
 			}
 	}
 	return next(action)
 }
-
-

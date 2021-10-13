@@ -1,8 +1,13 @@
-import {call, takeEvery} from 'redux-saga/effects'
-import {SET_FORM_CONFIRMED_REGISTRATION} from "../../redux/forms/validatorRegistrationForm/validatorRegistrationTypes"
+import {call, takeEvery, put, delay} from 'redux-saga/effects'
+import {
+	CLEAR_REGISTRATION_VALIDATOR,
+	SET_FORM_CONFIRMED_REGISTRATION
+} from "../../redux/forms/validatorRegistrationForm/validatorRegistrationTypes"
 import {server} from '../../../config/config.json'
-import {showToast} from "../../hooks/useToast"
-console.log('config: ', server)
+import {showToast} from "../../use/showToast"
+import {navigationRef} from "../../components/navigation/navigation"
+
+
 export function* registrationSaga() {
 	yield call(registrationSagaWatcher)
 }
@@ -13,17 +18,22 @@ function* registrationSagaWatcher() {
 }
 
 function* registrationSagaWorker(userData) {
-	console.log(userData)
-	const request = yield call(fetch, `${server}/registration`, {
-		method: 'POST', headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(userData.payload)
-	})
-	const jsonData = yield call([request, request.json])
-	yield call(showToast,Object.values(jsonData)[0])
+	try {
+		const response = yield call(fetch, `${server}/registration`, {
+			method: 'POST', headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(userData.payload)
+		})
+		const jsonData = yield call([response, response.json])
+		yield call(showToast,Object.values(jsonData)[0])
+		if (response.ok) {
+			yield delay(1000)
+			yield put({type:CLEAR_REGISTRATION_VALIDATOR})
+			navigationRef.navigate('login')
+		}
+	}catch (error){
+		console.error(error)
+		yield call(showToast,JSON.stringify(error))
+	}
 }
-
-
-// dispatch({type:CLEAR_REGISTRATION_VALIDATOR})
-// dispatch({type:SET_REGISTRATION_ERRORS,payload: {}})
